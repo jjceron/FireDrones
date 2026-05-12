@@ -1,6 +1,4 @@
-# FireDrones
-
-**Academic project title:** Sistema Multi-Agente de Drones para Atención de Incendios Urbanos
+# Multi-Agent Drone System Simulator for Urban Firefighting
 
 ---
 
