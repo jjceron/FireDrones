@@ -8,7 +8,7 @@ from __future__ import annotations
 import random
 from firedrones.environment.grid import Grid
 from firedrones.environment.cell import CellType
-from firedrones.environment.fire import Fire, _fire_id_counter
+from firedrones.environment.fire import Fire
 from firedrones.agents.drone import Drone
 from firedrones.agents.drone_state import DroneState
 from firedrones.planning.astar import AStarPlanner
@@ -60,6 +60,7 @@ class Simulator:
         self.tick: int = 0
         self.paused: bool = False
         self.metrics = Metrics()
+        self.scenario_name: str = "default"
 
         # Internals
         self._obstacle_move_timer: int = 0
@@ -209,9 +210,13 @@ class Simulator:
             if drone.state == DroneState.MOVING_TO_FIRE and not drone.path:
                 fire = self._fire_for_drone(drone)
                 if fire and not fire.extinguished:
-                    self._plan_path(drone, fire.position)
+                    if drone.position == fire.position:
+                        drone.state = DroneState.EXTINGUISHING
+                        drone.extinguish_timer = 0
+                    else:
+                        self._plan_path(drone, fire.position, replan=True)
                 else:
-                    drone.clear_assignment()
+                    self._release_assignment(drone)
                     drone.state = DroneState.IDLE
 
         # 6. Collision avoidance — determine which drones must wait
@@ -256,7 +261,7 @@ class Simulator:
                         drone.state = DroneState.IDLE
                 else:
                     # Fire already gone
-                    drone.clear_assignment()
+                    self._release_assignment(drone)
                     drone.state = DroneState.IDLE
 
         # 9. Recharge at base
@@ -273,21 +278,39 @@ class Simulator:
     # Helpers
     # ------------------------------------------------------------------
 
+    def _release_assignment(self, drone: Drone) -> None:
+        """Detach the drone from its current fire and make that fire assignable again."""
+        fire = self._fire_for_drone(drone)
+        if fire and not fire.extinguished and fire.assigned_drone_id == drone.drone_id:
+            fire.assigned_drone_id = None
+        drone.clear_assignment()
+
     def _assign_drone_to_fire(self, drone: Drone, fire: Fire) -> None:
+        self._release_assignment(drone)
         drone.target_fire_id = fire.fire_id
         fire.assigned_drone_id = drone.drone_id
-        drone.state = DroneState.MOVING_TO_FIRE
-        self._plan_path(drone, fire.position)
+        if drone.position == fire.position:
+            drone.state = DroneState.EXTINGUISHING
+            drone.extinguish_timer = 0
+            drone.path = []
+        else:
+            drone.state = DroneState.MOVING_TO_FIRE
+            self._plan_path(drone, fire.position)
 
     def _send_to_base(self, drone: Drone) -> None:
-        drone.clear_assignment()
+        self._release_assignment(drone)
         drone.state = DroneState.RETURNING_TO_BASE
-        self._plan_path(drone, drone.base_position)
+        self._plan_path(drone, drone.base_position, replan=True)
 
-    def _plan_path(self, drone: Drone, goal: tuple[int, int]) -> None:
+    def _plan_path(self, drone: Drone, goal: tuple[int, int], *, replan: bool = False) -> None:
         planner = self._get_planner()
         path = planner.find_path(drone.position, goal)
         drone.path = path
+        self.metrics.record_planning(
+            getattr(planner, "last_nodes_expanded", 0),
+            getattr(planner, "last_elapsed_ms", 0.0),
+            replan=replan,
+        )
 
     def _fire_for_drone(self, drone: Drone) -> Fire | None:
         if drone.target_fire_id is None:
@@ -332,6 +355,7 @@ class Simulator:
         self.rows = scenario.rows
         self.priority_mode = scenario.priority_mode
         self.dynamic_obstacles = scenario.dynamic_obstacles
+        self.scenario_name = scenario.name
         self.tick = 0
         self.fires = []
         self.drones = []
@@ -342,8 +366,15 @@ class Simulator:
         for col, row in scenario.obstacle_positions:
             self.grid.set_type(col, row, CellType.OBSTACLE)
 
-        # Place bases
-        self._base_positions = scenario.base_positions or [(1, 1)]
+        # Place bases. Include drone home bases even if the scenario forgot to list them.
+        declared_bases = list(scenario.base_positions or [])
+        drone_bases = [(bc, br) for _, _, bc, br in scenario.drone_positions]
+        self._base_positions = []
+        for pos in [*declared_bases, *drone_bases]:
+            if pos not in self._base_positions:
+                self._base_positions.append(pos)
+        if not self._base_positions:
+            self._base_positions = [(1, 1)]
         for bc, br in self._base_positions:
             self.grid.set_type(bc, br, CellType.BASE)
 
@@ -375,6 +406,7 @@ class Simulator:
             num_obstacles=self.num_obstacles,
             initial_fires=config.INITIAL_FIRES,
         )
+        self.scenario_name = "default"
         self.tick = 0
         self.metrics = Metrics()
 

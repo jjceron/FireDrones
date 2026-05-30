@@ -27,6 +27,7 @@ except ImportError:
 from firedrones import config
 from firedrones.environment.cell import CellType
 from firedrones.agents.drone_state import DroneState
+from firedrones.simulation.scenarios import SCENARIO_MAP
 
 
 class PygameGUI:
@@ -67,6 +68,15 @@ class PygameGUI:
         self._tick_ms: int = config.SIMULATION_TICK_MS
         self._elapsed: int = 0
 
+    def _sync_window_to_grid(self) -> None:
+        """Resize the window when a loaded scenario changes the grid dimensions."""
+        grid = self.controller.grid
+        self.grid_pixel_w = grid.cols * self.cell_size
+        self.grid_pixel_h = grid.rows * self.cell_size
+        self.window_w = self.grid_pixel_w + self.sidebar_width
+        self.window_h = self.grid_pixel_h
+        self.screen = pygame.display.set_mode((self.window_w, self.window_h))
+
     # ------------------------------------------------------------------
     # Main loop
     # ------------------------------------------------------------------
@@ -97,6 +107,13 @@ class PygameGUI:
                         self.controller.handle_event("toggle_priority")
                     elif event.key == pygame.K_d:
                         self.controller.handle_event("toggle_algorithm")
+                    elif pygame.K_1 <= event.key <= pygame.K_8:
+                        scenario_name = f"scenario_{event.key - pygame.K_0}"
+                        scenario = SCENARIO_MAP.get(scenario_name)
+                        if scenario is not None:
+                            self.controller.handle_event("load_scenario", scenario=scenario)
+                            self.controller.simulator.fire_spawn_prob = 0.0
+                            self._sync_window_to_grid()
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:  # left click → spawn fire
@@ -270,6 +287,7 @@ class PygameGUI:
         # Title
         draw_text("FireDrones", config.COLOR_ACCENT, self.font_lg)
         draw_text("Multi-Agent Fire Response", config.COLOR_TEXT_DIM, self.font_title)
+        draw_text(f"Scenario: {self.controller.scenario_name}", config.COLOR_TEXT_DIM)
         y += 4
         draw_divider()
 
@@ -326,6 +344,7 @@ class PygameGUI:
             "O      Move obstacle",
             "P      Toggle priority",
             "D      Toggle algorithm",
+            "1-8    Load scenario",
             "LClick Spawn fire here",
             "Esc    Quit",
         ]

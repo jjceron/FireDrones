@@ -108,6 +108,10 @@ class Controller:
     def use_astar(self) -> bool:
         return self.simulator.use_astar
 
+    @property
+    def scenario_name(self) -> str:
+        return self.simulator.scenario_name
+
     def step(self) -> None:
         """Advance the simulation by one tick."""
         self.simulator.step()

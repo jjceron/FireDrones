@@ -1,5 +1,6 @@
 """Tests for the Grid class."""
 import sys, os
+import contextlib
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from firedrones.environment.grid import Grid

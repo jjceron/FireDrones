@@ -84,26 +84,26 @@ SCENARIO_3 = ScenarioConfig(
         (11, 8, 0),
     ],
     obstacle_positions=[(5, 5), (5, 6), (5, 7), (9, 5), (9, 6), (9, 7)],
-    base_positions=[(1, 1)],
+    base_positions=[(1, 1), (13, 1), (1, 10), (13, 10)],
 )
 
 SCENARIO_4 = ScenarioConfig(
     name="scenario_4",
-    description="Collision avoidance: two drones moving toward each other on the same corridor.",
+    description="Collision avoidance: two drones converge on a one-cell bottleneck.",
     cols=12,
-    rows=6,
+    rows=7,
     drone_positions=[
-        (1, 3, 1, 3),
-        (10, 3, 10, 3),
+        (1, 2, 1, 2),
+        (1, 4, 1, 4),
     ],
     fire_positions=[
-        (10, 3, 0),  # drone 1 heads right
-        (1, 3, 0),   # drone 2 heads left
+        (10, 2, 0),
+        (10, 4, 0),
     ],
     obstacle_positions=[
-        (5, 0), (5, 1), (5, 2), (5, 4), (5, 5),  # narrow corridor at row 3
+        (5, 0), (5, 1), (5, 2), (5, 4), (5, 5), (5, 6),  # one-cell bottleneck at (5,3)
     ],
-    base_positions=[(1, 3), (10, 3)],
+    base_positions=[(1, 2), (1, 4)],
 )
 
 SCENARIO_5 = ScenarioConfig(
@@ -141,7 +141,7 @@ SCENARIO_7 = ScenarioConfig(
     drone_positions=[(1, 1, 1, 1), (13, 1, 13, 1)],
     fire_positions=[(7, 10, 0)],
     obstacle_positions=[(4, 3), (4, 4), (4, 5), (10, 3), (10, 4), (10, 5)],
-    base_positions=[(1, 1)],
+    base_positions=[(1, 1), (13, 1)],
 )
 
 SCENARIO_8 = ScenarioConfig(

@@ -1,0 +1,50 @@
+{
+  "tick": 14,
+  "active_fires": 0,
+  "extinguished_fires": 1,
+  "avg_response_time": 14.0,
+  "drones_in_mission": 0,
+  "total_water": 75.0,
+  "total_battery": 86.0,
+  "total_distance": 14,
+  "collisions_avoided": 0,
+  "planning_calls": 1,
+  "total_nodes_expanded": 64,
+  "avg_nodes_expanded": 64.0,
+  "total_planning_time_ms": 0.163,
+  "avg_planning_time_ms": 0.163,
+  "replans": 0,
+  "makespan": 14,
+  "throughput": 0.071,
+  "scenario": "scenario_1",
+  "algorithm": "astar",
+  "fires": [
+    {
+      "id": 1,
+      "position": [
+        8,
+        8
+      ],
+      "priority": 0,
+      "spawn_tick": 0,
+      "extinguished": true,
+      "extinguish_tick": 14,
+      "response_time": 14,
+      "assigned_drone_id": 1
+    }
+  ],
+  "drones": [
+    {
+      "id": 1,
+      "position": [
+        8,
+        8
+      ],
+      "state": "IDLE",
+      "battery": 86.0,
+      "water": 75.0,
+      "distance": 14,
+      "collisions_avoided": 0
+    }
+  ]
+}

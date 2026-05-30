@@ -7,6 +7,7 @@ A* because it expands more nodes. It is included here as a comparison
 baseline to demonstrate the added efficiency of the heuristic in A*.
 """
 from __future__ import annotations
+import time
 from firedrones.environment.grid import Grid
 from firedrones.utils.priority_queue import PriorityQueue
 
@@ -23,6 +24,8 @@ class DijkstraPlanner:
 
     def __init__(self, grid: Grid) -> None:
         self.grid = grid
+        self.last_nodes_expanded: int = 0
+        self.last_elapsed_ms: float = 0.0
 
     def find_path(
         self,
@@ -40,15 +43,23 @@ class DijkstraPlanner:
             A list of (col, row) positions from start (exclusive) to goal
             (inclusive), or an empty list if no path exists.
         """
+        started_at = time.perf_counter()
+        self.last_nodes_expanded = 0
+        self.last_elapsed_ms = 0.0
+
+        def finish(path: list[tuple[int, int]]) -> list[tuple[int, int]]:
+            self.last_elapsed_ms = (time.perf_counter() - started_at) * 1000.0
+            return path
+
         sc, sr = start
         gc, gr = goal
 
         if not self.grid.in_bounds(sc, sr) or not self.grid.in_bounds(gc, gr):
-            return []
-        if not self.grid.is_traversable(gc, gr):
-            return []
+            return finish([])
+        if not self.grid.is_traversable(sc, sr) or not self.grid.is_traversable(gc, gr):
+            return finish([])
         if start == goal:
-            return []
+            return finish([])
 
         open_set: PriorityQueue[tuple[int, int]] = PriorityQueue()
         open_set.push(start, 0.0)
@@ -58,10 +69,11 @@ class DijkstraPlanner:
 
         while not open_set.empty():
             current = open_set.pop()
+            self.last_nodes_expanded += 1
             cc, cr = current
 
             if current == goal:
-                return self._reconstruct(came_from, goal)
+                return finish(self._reconstruct(came_from, goal))
 
             for neighbour in self.grid.neighbours(cc, cr):
                 nc, nr = neighbour.col, neighbour.row
@@ -73,7 +85,7 @@ class DijkstraPlanner:
                     came_from[npos] = current
                     open_set.push(npos, new_dist)
 
-        return []
+        return finish([])
 
     @staticmethod
     def _reconstruct(
