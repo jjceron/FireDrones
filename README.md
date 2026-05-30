@@ -392,22 +392,6 @@ If a higher-priority fire is unreachable due to obstacles, the system detects th
 
 ---
 
-## Suggested Recording Order
-
-For a concise demonstration video, run the following scenarios:
-
-```powershell
-py -m firedrones.main --scenario scenario_1
-py -m firedrones.main --scenario scenario_2
-py -m firedrones.main --scenario scenario_3
-py -m firedrones.main --scenario scenario_4
-py -m firedrones.main --scenario scenario_7
-```
-
-These match the main report cases: basic navigation, obstacles, multi-agent coordination, collision avoidance, and dynamic replanning.
-
----
-
 ## Limitations
 
 - Collision avoidance is wait-based.
